@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mon Inventaire du Jardin</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            text-align: center;
+            padding: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            padding: 30px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 250px;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #2196F3;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #1976D2;
+        }
+
+        .btn-danger {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #d32f2f;
+        }
+
+        .plants-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .plant-card {
+            background: #f9f9f9;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+            border-left: 5px solid #4CAF50;
+        }
+
+        .plant-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .plant-name {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .plant-info {
+            margin: 8px 0;
+            color: #555;
+        }
+
+        .plant-info strong {
+            color: #2c3e50;
+        }
+
+        .plant-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .modal h2 {
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 30px;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: -10px;
+        }
+
+        .close:hover {
+            color: #000;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+
+        .empty-state img {
+            width: 100px;
+            height: 100px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+            }
+            
+            .plants-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .modal-content {
+                margin: 10% auto;
+                width: 95%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌱 Mon Inventaire du Jardin</h1>
+            <p>Gardez une trace de toutes vos plantes</p>
+        </div>
+
+        <div class="main-content">
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalPlants">0</div>
+                    <div>Plantes au total</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="floweringPlants">0</div>
+                    <div>En floraison</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="needWater">0</div>
+                    <div>Besoin d'arrosage</div>
+                </div>
+            </div>
+
+            <div class="controls">
+                <input type="text" id="searchInput" class="search-box" placeholder="🔍 Rechercher une plante...">
+                <button class="btn btn-primary" onclick="openModal()">➕ Ajouter une plante</button>
+                <button class="btn btn-secondary" onclick="exportData()">📤 Exporter</button>
+                <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
+                <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">📥 Importer</button>
+            </div>
+
+            <div id="plantsContainer">
+                <div class="empty-state">
+                    <div style="font-size: 4em; margin-bottom: 20px;">🌱</div>
+                    <h3>Aucune plante dans votre inventaire</h3>
+                    <p>Commencez par ajouter votre première plante !</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div id="plantModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2 id="modalTitle">Ajouter une plante</h2>
+            <form id="plantForm">
+                <div class="form-group">
+                    <label for="plantName">Nom de la plante *</label>
+                    <input type="text" id="plantName" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="plantVariety">Variété</label>
+                    <input type="text" id="plantVariety">
+                </div>
+                
+                <div class="form-group">
+                    <label for="plantType">Type</label>
+                    <select id="plantType">
+                        <option value="">Sélectionner...</option>
+                        <option value="Fleur">Fleur</option>
+                        <option value="Légume">Légume</option>
+                        <option value="Herbe aromatique">Herbe aromatique</option>
+                        <option value="Arbre fruitier">Arbre fruitier</option>
+                        <option value="Arbuste">Arbuste</option>
+                        <option value="Plante grasse">Plante grasse</option>
+                        <option value="Autre">Autre</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="plantLocation">Emplacement</label>
+                    <input type="text" id="plantLocation" placeholder="Ex: Parterre sud, Jardinière balcon...">
+                </div>
+                
+                <div class="form-group">
+                    <label for="plantingDate">Date de plantation</label>
+                    <input type="date" id="plantingDate">
+                </div>
+                
+                <div class="form-group">
+                    <label for="lastWatered">Dernier arrosage</label>
+                    <input type="date" id="lastWatered">
+                </div>
+                
+                <div class="form-group">
+                    <label for="isFlowering">En floraison ?</label>
+                    <select id="isFlowering">
+                        <option value="false">Non</option>
+                        <option value="true">Oui</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="plantNotes">Notes</label>
+                    <textarea id="plantNotes" rows="3" placeholder="Observations, conseils d'entretien..."></textarea>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Annuler</button>
+                    <button type="submit" class="btn btn-primary">Sauvegarder</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let plants = [];
+        let editingIndex = -1;
+
+        // Charger les données au démarrage
+        window.onload = function() {
+            loadData();
+            updateStats();
+            renderPlants();
+            
+            // Écouteur pour la recherche
+            document.getElementById('searchInput').addEventListener('input', function() {
+                renderPlants(this.value);
+            });
+        };
+
+        function loadData() {
+            try {
+                const savedPlants = localStorage.getItem('gardenInventory');
+                if (savedPlants) {
+                    plants = JSON.parse(savedPlants);
+                }
+            } catch (error) {
+                console.log('Données stockées en mémoire pendant cette session');
+            }
+        }
+
+        function saveData() {
+            try {
+                localStorage.setItem('gardenInventory', JSON.stringify(plants));
+            } catch (error) {
+                console.log('Données sauvegardées en mémoire pendant cette session');
+            }
+        }
+
+        function openModal(index = -1) {
+            editingIndex = index;
+            const modal = document.getElementById('plantModal');
+            const form = document.getElementById('plantForm');
+            const title = document.getElementById('modalTitle');
+            
+            if (index >= 0) {
+                title.textContent = 'Modifier la plante';
+                const plant = plants[index];
+                document.getElementById('plantName').value = plant.name || '';
+                document.getElementById('plantVariety').value = plant.variety || '';
+                document.getElementById('plantType').value = plant.type || '';
+                document.getElementById('plantLocation').value = plant.location || '';
+                document.getElementById('plantingDate').value = plant.plantingDate || '';
+                document.getElementById('lastWatered').value = plant.lastWatered || '';
+                document.getElementById('isFlowering').value = plant.isFlowering || 'false';
+                document.getElementById('plantNotes').value = plant.notes || '';
+            } else {
+                title.textContent = 'Ajouter une plante';
+                form.reset();
+            }
+            
+            modal.style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('plantModal').style.display = 'none';
+            editingIndex = -1;
+        }
+
+        document.getElementById('plantForm').onsubmit = function(e) {
+            e.preventDefault();
+            
+            const plant = {
+                name: document.getElementById('plantName').value,
+                variety: document.getElementById('plantVariety').value,
+                type: document.getElementById('plantType').value,
+                location: document.getElementById('plantLocation').value,
+                plantingDate: document.getElementById('plantingDate').value,
+                lastWatered: document.getElementById('lastWatered').value,
+                isFlowering: document.getElementById('isFlowering').value === 'true',
+                notes: document.getElementById('plantNotes').value,
+                dateAdded: editingIndex >= 0 ? plants[editingIndex].dateAdded : new Date().toISOString()
+            };
+            
+            if (editingIndex >= 0) {
+                plants[editingIndex] = plant;
+            } else {
+                plants.push(plant);
+            }
+            
+            saveData();
+            updateStats();
+            renderPlants();
+            closeModal();
+        };
+
+        function deletePlant(index) {
+            if (confirm('Êtes-vous sûr de vouloir supprimer cette plante ?')) {
+                plants.splice(index, 1);
+                saveData();
+                updateStats();
+                renderPlants();
+            }
+        }
+
+        function updateStats() {
+            const totalPlants = plants.length;
+            const floweringPlants = plants.filter(p => p.isFlowering).length;
+            
+            // Calculer les plantes qui ont besoin d'arrosage (plus de 3 jours)
+            const threeDaysAgo = new Date();
+            threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+            const needWater = plants.filter(p => {
+                if (!p.lastWatered) return true;
+                return new Date(p.lastWatered) < threeDaysAgo;
+            }).length;
+            
+            document.getElementById('totalPlants').textContent = totalPlants;
+            document.getElementById('floweringPlants').textContent = floweringPlants;
+            document.getElementById('needWater').textContent = needWater;
+        }
+
+        function renderPlants(searchTerm = '') {
+            const container = document.getElementById('plantsContainer');
+            const filteredPlants = plants.filter(plant => 
+                plant.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (plant.variety && plant.variety.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                (plant.type && plant.type.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                (plant.location && plant.location.toLowerCase().includes(searchTerm.toLowerCase()))
+            );
+            
+            if (filteredPlants.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div style="font-size: 4em; margin-bottom: 20px;">🔍</div>
+                        <h3>${searchTerm ? 'Aucune plante trouvée' : 'Aucune plante dans votre inventaire'}</h3>
+                        <p>${searchTerm ? 'Essayez un autre terme de recherche' : 'Commencez par ajouter votre première plante !'}</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = `
+                <div class="plants-grid">
+                    ${filteredPlants.map((plant, index) => {
+                        const originalIndex = plants.indexOf(plant);
+                        const daysSinceWatered = plant.lastWatered ? 
+                            Math.floor((new Date() - new Date(plant.lastWatered)) / (1000 * 60 * 60 * 24)) : null;
+                        
+                        return `
+                            <div class="plant-card">
+                                <div class="plant-name">${plant.name}</div>
+                                ${plant.variety ? `<div class="plant-info"><strong>Variété:</strong> ${plant.variety}</div>` : ''}
+                                ${plant.type ? `<div class="plant-info"><strong>Type:</strong> ${plant.type}</div>` : ''}
+                                ${plant.location ? `<div class="plant-info"><strong>Emplacement:</strong> ${plant.location}</div>` : ''}
+                                ${plant.plantingDate ? `<div class="plant-info"><strong>Planté le:</strong> ${new Date(plant.plantingDate).toLocaleDateString('fr-FR')}</div>` : ''}
+                                ${plant.lastWatered ? `<div class="plant-info"><strong>Dernier arrosage:</strong> ${new Date(plant.lastWatered).toLocaleDateString('fr-FR')} ${daysSinceWatered > 3 ? '💧' : ''}</div>` : '<div class="plant-info" style="color: orange;"><strong>⚠️ Arrosage à renseigner</strong></div>'}
+                                ${plant.isFlowering ? '<div class="plant-info" style="color: #e91e63;"><strong>🌸 En floraison</strong></div>' : ''}
+                                ${plant.notes ? `<div class="plant-info"><strong>Notes:</strong> ${plant.notes}</div>` : ''}
+                                
+                                <div class="plant-actions">
+                                    <button class="btn btn-secondary" onclick="openModal(${originalIndex})">✏️ Modifier</button>
+                                    <button class="btn btn-danger" onclick="deletePlant(${originalIndex})">🗑️ Supprimer</button>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        }
+
+        function exportData() {
+            const dataStr = JSON.stringify(plants, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `inventaire-jardin-${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedPlants = JSON.parse(e.target.result);
+                    if (confirm('Voulez-vous remplacer votre inventaire actuel ou ajouter ces plantes à l\'inventaire existant ?\n\nOK = Remplacer\nAnnuler = Ajouter')) {
+                        plants = importedPlants;
+                    } else {
+                        plants = plants.concat(importedPlants);
+                    }
+                    saveData();
+                    updateStats();
+                    renderPlants();
+                    alert('Import réussi !');
+                } catch (error) {
+                    alert('Erreur lors de l\'import du fichier. Vérifiez que c\'est un fichier JSON valide.');
+                }
+            };
+            reader.readAsText(file);
+            
+            // Reset input pour permettre de réimporter le même fichier
+            event.target.value = '';
+        }
+
+        // Fermer la modal en cliquant à l'extérieur
+        window.onclick = function(event) {
+            const modal = document.getElementById('plantModal');
+            if (event.target == modal) {
+                closeModal();
+            }
+        };
+    </script>
+</body>
+</html>
