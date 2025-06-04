@@ -263,6 +263,28 @@
             opacity: 0.5;
         }
 
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+            margin: 0;
+        }
+
+        .watering-fields {
+            margin-left: 20px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .watering-fields.active {
+            display: block;
+        }
+
         @media (max-width: 768px) {
             .controls {
                 flex-direction: column;
@@ -361,8 +383,14 @@
                 </div>
                 
                 <div class="form-group">
-                    <label for="lastWatered">Dernier arrosage</label>
-                    <input type="date" id="lastWatered">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="needsWatering" onchange="toggleWateringFields()">
+                        <label for="needsWatering">Cette plante nécessite un suivi d'arrosage</label>
+                    </div>
+                    <div id="wateringFields" class="watering-fields">
+                        <label for="lastWatered">Dernier arrosage</label>
+                        <input type="date" id="lastWatered">
+                    </div>
                 </div>
                 
                 <div class="form-group">
@@ -421,6 +449,18 @@
             }
         }
 
+        function toggleWateringFields() {
+            const checkbox = document.getElementById('needsWatering');
+            const fields = document.getElementById('wateringFields');
+            
+            if (checkbox.checked) {
+                fields.classList.add('active');
+            } else {
+                fields.classList.remove('active');
+                document.getElementById('lastWatered').value = '';
+            }
+        }
+
         function openModal(index = -1) {
             editingIndex = index;
             const modal = document.getElementById('plantModal');
@@ -435,12 +475,16 @@
                 document.getElementById('plantType').value = plant.type || '';
                 document.getElementById('plantLocation').value = plant.location || '';
                 document.getElementById('plantingDate').value = plant.plantingDate || '';
+                document.getElementById('needsWatering').checked = plant.needsWatering || false;
                 document.getElementById('lastWatered').value = plant.lastWatered || '';
                 document.getElementById('isFlowering').value = plant.isFlowering || 'false';
                 document.getElementById('plantNotes').value = plant.notes || '';
+                toggleWateringFields();
             } else {
                 title.textContent = 'Ajouter une plante';
                 form.reset();
+                document.getElementById('needsWatering').checked = false;
+                toggleWateringFields();
             }
             
             modal.style.display = 'block';
@@ -454,13 +498,16 @@
         document.getElementById('plantForm').onsubmit = function(e) {
             e.preventDefault();
             
+            const needsWatering = document.getElementById('needsWatering').checked;
+            
             const plant = {
                 name: document.getElementById('plantName').value,
                 variety: document.getElementById('plantVariety').value,
                 type: document.getElementById('plantType').value,
                 location: document.getElementById('plantLocation').value,
                 plantingDate: document.getElementById('plantingDate').value,
-                lastWatered: document.getElementById('lastWatered').value,
+                needsWatering: needsWatering,
+                lastWatered: needsWatering ? document.getElementById('lastWatered').value : '',
                 isFlowering: document.getElementById('isFlowering').value === 'true',
                 notes: document.getElementById('plantNotes').value,
                 dateAdded: editingIndex >= 0 ? plants[editingIndex].dateAdded : new Date().toISOString()
@@ -491,10 +538,11 @@
             const totalPlants = plants.length;
             const floweringPlants = plants.filter(p => p.isFlowering).length;
             
-            // Calculer les plantes qui ont besoin d'arrosage (plus de 3 jours)
+            // Calculer les plantes qui ont besoin d'arrosage (plus de 3 jours) et qui sont configurées pour le suivi
             const threeDaysAgo = new Date();
             threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
             const needWater = plants.filter(p => {
+                if (!p.needsWatering) return false; // Exclure les plantes sans suivi d'arrosage
                 if (!p.lastWatered) return true;
                 return new Date(p.lastWatered) < threeDaysAgo;
             }).length;
@@ -528,8 +576,18 @@
                 <div class="plants-grid">
                     ${filteredPlants.map((plant, index) => {
                         const originalIndex = plants.indexOf(plant);
-                        const daysSinceWatered = plant.lastWatered ? 
-                            Math.floor((new Date() - new Date(plant.lastWatered)) / (1000 * 60 * 60 * 24)) : null;
+                        
+                        let wateringInfo = '';
+                        if (plant.needsWatering) {
+                            if (plant.lastWatered) {
+                                const daysSinceWatered = Math.floor((new Date() - new Date(plant.lastWatered)) / (1000 * 60 * 60 * 24));
+                                wateringInfo = `<div class="plant-info"><strong>Dernier arrosage:</strong> ${new Date(plant.lastWatered).toLocaleDateString('fr-FR')} ${daysSinceWatered > 3 ? '💧' : ''}</div>`;
+                            } else {
+                                wateringInfo = '<div class="plant-info" style="color: orange;"><strong>⚠️ Arrosage à renseigner</strong></div>';
+                            }
+                        } else {
+                            wateringInfo = '<div class="plant-info" style="color: #666;"><strong>🌿 Sans suivi d\'arrosage</strong></div>';
+                        }
                         
                         return `
                             <div class="plant-card">
@@ -538,7 +596,7 @@
                                 ${plant.type ? `<div class="plant-info"><strong>Type:</strong> ${plant.type}</div>` : ''}
                                 ${plant.location ? `<div class="plant-info"><strong>Emplacement:</strong> ${plant.location}</div>` : ''}
                                 ${plant.plantingDate ? `<div class="plant-info"><strong>Planté le:</strong> ${new Date(plant.plantingDate).toLocaleDateString('fr-FR')}</div>` : ''}
-                                ${plant.lastWatered ? `<div class="plant-info"><strong>Dernier arrosage:</strong> ${new Date(plant.lastWatered).toLocaleDateString('fr-FR')} ${daysSinceWatered > 3 ? '💧' : ''}</div>` : '<div class="plant-info" style="color: orange;"><strong>⚠️ Arrosage à renseigner</strong></div>'}
+                                ${wateringInfo}
                                 ${plant.isFlowering ? '<div class="plant-info" style="color: #e91e63;"><strong>🌸 En floraison</strong></div>' : ''}
                                 ${plant.notes ? `<div class="plant-info"><strong>Notes:</strong> ${plant.notes}</div>` : ''}
                                 
